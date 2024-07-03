@@ -400,3 +400,5 @@ FodyWeavers.xsd
 
 # Virtual environment
 .venv
+samples
+temp
