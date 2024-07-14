@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 
 
-def load_sound_mono(file_name: str):
+def load_sound_mono(file_name:str):
     sampling_freq, sound = scipy.io.wavfile.read(file_name)
     
     if len(sound.shape) == 2:
@@ -12,7 +12,21 @@ def load_sound_mono(file_name: str):
     return sampling_freq, sound
 
 
-def plot_sounds(sound1, sound2, sampling_freq=1, delay=0):
+def get_mean_value(Sxx:np.ndarray, sampling_freq:float, crop_length:float|None=None):
+    if crop_length is None:
+        crop_length = Sxx.shape[1]
+    
+    else:
+        crop_length = min(Sxx.shape[1], int(crop_length/sampling_freq))
+
+    cropped_sound = Sxx[:, :crop_length]
+
+    mean_value = np.sum(cropped_sound)
+
+    return mean_value
+
+
+def plot_sounds(sound1:np.ndarray, sound2:np.ndarray, sampling_freq:float=1, delay:float=0):
     plt.figure()
     plt.plot(np.arange(0, sound1.shape[0] / sampling_freq, 1/sampling_freq), sound1)
     plt.plot(np.arange(0, sound2.shape[0] / sampling_freq, 1/sampling_freq) + delay, sound2)
@@ -32,6 +46,10 @@ def get_cross_correlation_spectrogram(sound1:np.ndarray, sound2:np.ndarray, samp
 
     f1, t1, Sxx1 = scipy.signal.spectrogram(sound1, nperseg=nperseg, noverlap=noverlap, fs=sampling_freq)
     f2, t2, Sxx2 = scipy.signal.spectrogram(sound2, nperseg=nperseg, noverlap=noverlap, fs=sampling_freq)
+
+    # # Normalise the spectrograms by mean volume
+    # Sxx1 /= get_mean_value(Sxx1, sampling_freq)
+    # Sxx2 /= get_mean_value(Sxx2, sampling_freq)
 
     # Zero pad the spectrograms
     Sxx1_padded = np.pad(Sxx1, pad_width=((0,0), (0, Sxx2.shape[1] - 1)))
@@ -62,7 +80,7 @@ def get_cross_correlation_spectrogram(sound1:np.ndarray, sound2:np.ndarray, samp
     return effective_sampling_freq, cross_correlation
 
 
-def get_delay(cross_correlation, effective_sampling_freq):
+def get_delay(cross_correlation:np.ndarray, effective_sampling_freq:float):
     position = np.argmax(cross_correlation)
     value = cross_correlation[position]
 
